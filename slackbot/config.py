@@ -25,8 +25,13 @@ SECTIONS['settings'] = {
     'beamline': {
         'default': 'None',
         'type': str,
-        'help': "How to get rotation axis: read from HDF5 ('read_auto', 'read_manual'), auto calculate ('auto'), or take from this file ('manual')",
+        'help': "This parameter is used to select the pv-x-y.json file, e.g. pv-2-bm.json. This file must be created in the slackbot/data directory",
         'choices': ['None','2-bm', '7-bm', '8-id', '20-bm', '29-id', '32-id']},
+    'channel-name': {
+        'default': 'automated',
+        'type': str,
+        'help': "Name of the slack rob channel",
+        'choices': ['automated','20-bm']},
     }
 
 

@@ -28,6 +28,7 @@ from slackbot import log
 
 data_path = Path(__file__).parent / '../../slackbot/data'
 bname = []
+channel_name = []
 
 # Set bot tokens as environment values
 env_path = os.path.join(str(pathlib.Path.home()), '.slackenv')
@@ -66,7 +67,8 @@ def reply(payload, say, client, logger, context, body):
         f_lookup = json.load(json_file)
        
     pvs = {}
-    if chan == "automated": 
+
+    if chan == channel_name[0]: 
         if text in f_lookup:
             pvs = f_lookup[text]
             time.sleep(1)
@@ -84,7 +86,6 @@ def reply(payload, say, client, logger, context, body):
             say("Greetings *{0}*!".format(user)) 
 
 def start_robot():
-
     handler = SocketModeHandler(app, app_token) 
     handler.start()
 
@@ -101,6 +102,9 @@ def start(args):
     bname.append(args.beamline)
     log.info('Using PVs for beamline: %s' % args.beamline)
     log.info('Enter help in your beamline slack channel')
+    channel_name.append(args.channel_name)
+    log.info('Using slack channel: %s' % args.channel_name)
+
     start_robot()
 
 def main():
