@@ -74,16 +74,15 @@ def reply(payload, say, client, logger, context, body):
             time.sleep(1)
             _, slack_messages = pv.check_pvs_connected(pvs)
             for message in slack_messages:
-                say(message)
+                ret = say(message)
         elif text == 'help':
             for text in f_lookup:
                 say(text)
         else:
             say('Type help for all options')
-
     else:
-        if text_match(text, "hello"):
-            say("Greetings *{0}*!".format(user)) 
+        log.error('Slack channel %s does not exist' % channel_name[0])
+        log.error('Run: slackbot start --channel-name %s ' % chan)
 
 def start_robot():
     handler = SocketModeHandler(app, app_token) 
@@ -105,6 +104,10 @@ def start(args):
     channel_name.append(args.channel_name)
     log.info('Using slack channel: %s' % args.channel_name)
 
+    # update slack.config file
+    sections = config.SLACKBOT_PARAMS
+    config.write(args.config, args=args, sections=sections)
+        
     start_robot()
 
 def main():
