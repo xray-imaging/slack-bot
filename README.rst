@@ -7,23 +7,25 @@ Usage
 
 ::
 
-    $ slackbot start --beamline 2-bm
+    $ slackbot start --beamline 2-bm --channel-name automated
       Bolt app is running!
 
 
 for help::
 
     slackbot start -h
-    usage: slackbot start [-h] [--beamline {None,2-bm,7-bm,8-id,20-bm,29-id,32-id}] [--config FILE] [--verbose]
+    usage: slackbot start [-h] [--beamline {None,2-bm,7-bm,8-id,20-bm,29-id,32-id}] [--channel-name {automated,20-bm}] [--config FILE] [--verbose]
 
     optional arguments:
       -h, --help            show this help message and exit
       --beamline {None,2-bm,7-bm,8-id,20-bm,29-id,32-id}
-                            How to get rotation axis: read from HDF5 ('read_auto', 'read_manual'), auto calculate ('auto'), or take from this file ('manual') (default: None)
+                            This parameter is used to select the pv-x-y.json file, e.g. pv-2-bm.json. This file must be created in the slackbot/data directory (default: None)
+      --channel-name {automated,20-bm}
+                            Name of the slack rob channel (default: automated)
       --config FILE         File name of configuration (default: /home/beams/USER2BMB/slack.conf)
       --verbose             Verbose output (default: True)
 
-then go to the autorized slack channel and type::
+then go to the authorized slack channel and type::
 
 	help
 
