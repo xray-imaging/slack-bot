@@ -1,0 +1,151 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+.. module:: slackbot
+   :platform: Unix
+   :synopsis: slack robot for the APS.
+
+"""
+
+import os
+import sys
+import time
+import datetime
+import argparse
+import pathlib
+import json
+
+from dotenv import load_dotenv
+from datetime import datetime
+from slack_bolt import App 
+from slack_bolt.adapter.socket_mode import SocketModeHandler 
+from pathlib import Path
+
+from slackbot import pv
+from slackbot import config
+from slackbot import log
+
+data_path = Path(__file__).parent / '../../slackbot/data'
+bname = []
+
+# Set bot tokens as environment values
+env_path = os.path.join(str(pathlib.Path.home()), '.slackenv')
+load_dotenv(dotenv_path=env_path)
+
+bot_token = os.environ.get("BOT_TOKEN")
+app_token = os.environ.get("APP_TOKEN") 
+
+app = App(token = bot_token)
+
+def text_match(txt_src, txt_tgt): 
+    if txt_tgt[:len(txt_src)].lower()==txt_src.lower(): 
+        return True 
+    else: 
+        return False
+
+@app.event("message") 
+def reply(payload, say, client, logger, context, body): 
+    # see https://slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html#slack_bolt.kwargs_injection.args.Args
+
+    if bname[0] == 'None':
+        jfname = 'pv.json'
+    else:
+        jfname = 'pv-' + bname[0] + '.json'
+    log.warning('Using PV file: %s' % jfname) 
+
+    try: 
+        text = payload["text"].lower()
+    except: 
+        return 
+    user = client.users_info(user=payload["user"])["user"]["real_name"] 
+    chan = client.conversations_info(channel=payload["channel"])["channel"]["name"]
+
+    # Load PV lookup table from the JSON file
+    with open(os.path.join(data_path, jfname)) as json_file:
+        f_lookup = json.load(json_file)
+       
+    pvs = {}
+    if chan == "automated": 
+        if text in f_lookup:
+            pvs = f_lookup[text]
+            time.sleep(1)
+            _, slack_messages = pv.check_pvs_connected(pvs)
+            for message in slack_messages:
+                say(message)
+        elif text == 'help':
+            for text in f_lookup:
+                say(text)
+        else:
+            say('Type help for all options')
+
+    else:
+        if text_match(text, "hello"):
+            say("Greetings *{0}*!".format(user)) 
+
+def start_robot():
+
+    handler = SocketModeHandler(app, app_token) 
+    handler.start()
+
+def init(args):
+    if not os.path.exists(str(args.config)):
+        config.write(str(args.config))
+    else:
+        raise RuntimeError("{0} already exists".format(args.config))
+
+def show_status(args):
+    config.log_values(args)
+
+def start(args):
+    bname.append(args.beamline)
+    log.info('Using PVs for beamline: %s' % args.beamline)
+    log.info('Enter help in your beamline slack channel')
+    start_robot()
+
+def main():
+    # set logs directory
+    home = os.path.expanduser("~")
+    logs_home = home + '/logs/'
+    # make sure logs directory exists
+    if not os.path.exists(logs_home):
+        os.makedirs(logs_home)
+    # setup logger
+    lfname = logs_home + 'slack_' + datetime.strftime(datetime.now(), "%Y-%m-%d_%H:%M:%S") + '.log'
+    log.setup_custom_logger(lfname)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', **config.SECTIONS['general']['config'])
+    start_params = config.SLACKBOT_PARAMS
+
+    cmd_parsers = [
+        ('init',        init,         (),                "Create configuration file"),
+        ('start',       start,        start_params,      "Start the slack bot"),
+        ('status',      show_status,  start_params,      "Show status"),
+    ]
+
+    subparsers = parser.add_subparsers(title="Commands", metavar='')
+
+    for cmd, func, sections, text in cmd_parsers:
+        cmd_params = config.Params(sections=sections)
+        cmd_parser = subparsers.add_parser(cmd, help=text, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        cmd_parser = cmd_params.add_arguments(cmd_parser)
+        cmd_parser.set_defaults(_func=func)
+
+    args = config.parse_known_args(parser, subparser=True)
+
+    try:
+        # load args from default (config.py) if not changed
+        args._func(args)
+        config.log_values(args)
+        # update slack.config file
+        sections = config.SLACKBOT_PARAMS
+        config.write(args.config, args=args, sections=sections)
+    except RuntimeError as e:
+        log.error(str(e))
+        sys.exit(1)
+
+
+
+if __name__ == '__main__':
+    main()
