@@ -11,7 +11,7 @@ Slack bot automatical respond to predefined keywords, i.e. **ring**, **energ**, 
     :width: 60%
     :align: center
 
-Staring the slack bot server:
+Starting the slack bot server:
 
 ::
 
