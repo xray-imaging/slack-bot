@@ -5,6 +5,14 @@ APS Slack bot
 Usage
 =====
 
+Slack bot automatical respond to predefined keywords, i.e. **ring**, **energ**, **users** etc., returning a list of PV name/value associated with that keywords. 
+
+.. image:: docs/source/img/help.png
+    :width: 60%
+    :align: center
+
+Staring the slack bot server:
+
 ::
 
     $ slackbot start --beamline 2-bm --channel-name automated
